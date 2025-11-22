@@ -131,6 +131,7 @@ const RoomVisualizer = React.forwardRef(({ sqft, image, onImageChange }, ref) =>
                 <div className="relative rounded-2xl overflow-hidden shadow-lg bg-black group select-none">
                     <div
                         ref={imageContainerRef}
+                        id="room-visualizer-container"
                         className="relative cursor-crosshair min-h-[300px]"
                         onClick={handleImageClick}
                     >

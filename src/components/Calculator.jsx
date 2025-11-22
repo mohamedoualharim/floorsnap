@@ -150,14 +150,33 @@ const Calculator = () => {
 
       if (visualizerRef.current && roomImage) {
         try {
-          const canvas = await html2canvas(visualizerRef.current, {
+          // Create a temporary container for the clone
+          const tempContainer = document.createElement('div');
+          tempContainer.style.position = 'absolute';
+          tempContainer.style.left = '-9999px';
+          tempContainer.style.top = '0';
+          tempContainer.style.width = `${visualizerRef.current.offsetWidth}px`;
+          document.body.appendChild(tempContainer);
+
+          // Clone the visualizer node
+          const clone = visualizerRef.current.cloneNode(true);
+          tempContainer.appendChild(clone);
+
+          // Wait a moment for images to settle in the clone
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          const canvas = await html2canvas(clone, {
             useCORS: true,
             scale: 2, // Higher quality
             logging: false,
             backgroundColor: '#ffffff'
           });
+
           imageToAdd = canvas.toDataURL('image/jpeg', 0.9);
           isCaptured = true;
+
+          // Cleanup
+          document.body.removeChild(tempContainer);
         } catch (e) {
           console.error("Error capturing visualizer, falling back to raw image", e);
           imageToAdd = roomImage;

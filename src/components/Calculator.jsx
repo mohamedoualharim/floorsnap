@@ -154,7 +154,7 @@ const Calculator = () => {
             useCORS: true,
             scale: 2, // Higher quality
             logging: false,
-            backgroundColor: null
+            backgroundColor: '#ffffff'
           });
           imageToAdd = canvas.toDataURL('image/jpeg', 0.9);
           isCaptured = true;

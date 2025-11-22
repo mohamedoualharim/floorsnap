@@ -45,7 +45,66 @@ const RoomVisualizer = React.forwardRef(({ sqft, image, onImageChange }, ref) =>
     const imageContainerRef = useRef(null);
 
     // Combine refs to allow both internal usage and external capture
-    React.useImperativeHandle(ref, () => imageContainerRef.current);
+    React.useImperativeHandle(ref, () => ({
+        container: imageContainerRef.current,
+        generateCompositeImage: async () => {
+            if (!image || !imageContainerRef.current) return null;
+
+            const imgElement = imageContainerRef.current.querySelector('img');
+            if (!imgElement) return null;
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size to match the natural image size for high quality
+            canvas.width = imgElement.naturalWidth;
+            canvas.height = imgElement.naturalHeight;
+
+            // Draw the main image
+            ctx.drawImage(imgElement, 0, 0);
+
+            // Draw labels
+            labels.forEach(label => {
+                // Convert % positions to pixels
+                const x = (label.x / 100) * canvas.width;
+                const y = (label.y / 100) * canvas.height;
+
+                // Label styling
+                const fontSize = Math.max(24, canvas.width * 0.02); // Responsive font size
+                ctx.font = `bold ${fontSize}px sans-serif`;
+                const padding = fontSize * 0.6;
+                const text = label.text;
+                const textMetrics = ctx.measureText(text);
+                const textWidth = textMetrics.width;
+                const boxWidth = textWidth + (padding * 2) + (fontSize * 1.5); // Extra space for X icon visual
+                const boxHeight = fontSize + (padding * 2);
+
+                // Draw Label Background (Orange Rounded Rect)
+                ctx.fillStyle = '#f97316'; // Orange-500
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 4;
+
+                // Centered positioning
+                const boxX = x - (boxWidth / 2);
+                const boxY = y - (boxHeight / 2);
+
+                // Simple rounded rect
+                const radius = 10;
+                ctx.beginPath();
+                ctx.roundRect(boxX, boxY, boxWidth, boxHeight, radius);
+                ctx.fill();
+                ctx.stroke();
+
+                // Draw Text
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, boxX + padding, y);
+            });
+
+            return canvas.toDataURL('image/jpeg', 0.9);
+        }
+    }));
 
     const handleImageUpload = (e) => {
         const file = e.target.files[0];

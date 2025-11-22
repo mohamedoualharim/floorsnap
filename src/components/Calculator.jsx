@@ -150,57 +150,17 @@ const Calculator = () => {
 
       if (visualizerRef.current && roomImage) {
         try {
-          // Create a temporary container for the clone
-          const tempContainer = document.createElement('div');
-          tempContainer.style.position = 'absolute';
-          tempContainer.style.left = '-9999px';
-          tempContainer.style.top = '0';
-          tempContainer.style.width = `${visualizerRef.current.offsetWidth}px`;
-          document.body.appendChild(tempContainer);
-
-          // Clone the visualizer node
-          const clone = visualizerRef.current.cloneNode(true);
-
-          // "Bake" the positions of the labels in the clone
-          // This fixes issues where html2canvas misses transforms applied by react-draggable
-          const sourceLabels = visualizerRef.current.querySelectorAll('.group\\/label');
-          const cloneLabels = clone.querySelectorAll('.group\\/label');
-          const sourceRect = visualizerRef.current.getBoundingClientRect();
-
-          sourceLabels.forEach((sourceLabel, index) => {
-            if (cloneLabels[index]) {
-              const labelRect = sourceLabel.getBoundingClientRect();
-              const relativeTop = labelRect.top - sourceRect.top;
-              const relativeLeft = labelRect.left - sourceRect.left;
-
-              // Force exact pixel positioning on the clone
-              cloneLabels[index].style.position = 'absolute';
-              cloneLabels[index].style.top = `${relativeTop}px`;
-              cloneLabels[index].style.left = `${relativeLeft}px`;
-              cloneLabels[index].style.transform = 'none'; // Remove draggable transforms
-              cloneLabels[index].style.margin = '0'; // Remove centering margins if any
-            }
-          });
-
-          tempContainer.appendChild(clone);
-
-          // Wait a moment for images to settle in the clone
-          await new Promise(resolve => setTimeout(resolve, 100));
-
-          const canvas = await html2canvas(clone, {
-            useCORS: true,
-            scale: 2, // Higher quality
-            logging: false,
-            backgroundColor: '#ffffff'
-          });
-
-          imageToAdd = canvas.toDataURL('image/jpeg', 0.9);
-          isCaptured = true;
-
-          // Cleanup
-          document.body.removeChild(tempContainer);
+          // Use the manual composition method from RoomVisualizer
+          // This bypasses html2canvas issues by drawing directly to a canvas
+          if (visualizerRef.current.generateCompositeImage) {
+            imageToAdd = await visualizerRef.current.generateCompositeImage();
+            isCaptured = true;
+          } else {
+            // Fallback if ref isn't updated yet (shouldn't happen)
+            imageToAdd = roomImage;
+          }
         } catch (e) {
-          console.error("Error capturing visualizer, falling back to raw image", e);
+          console.error("Error generating composite image, falling back to raw image", e);
           imageToAdd = roomImage;
         }
       } else {

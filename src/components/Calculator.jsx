@@ -154,7 +154,6 @@ const Calculator = () => {
             useCORS: true,
             scale: 2, // Higher quality
             logging: false,
-            allowTaint: true,
             backgroundColor: null
           });
           imageToAdd = canvas.toDataURL('image/jpeg', 0.9);

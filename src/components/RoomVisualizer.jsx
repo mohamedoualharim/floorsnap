@@ -137,6 +137,7 @@ const RoomVisualizer = React.forwardRef(({ sqft, image, onImageChange }, ref) =>
                         <img
                             src={image}
                             alt="Room"
+                            crossOrigin="anonymous"
                             className="w-full h-auto block opacity-90 pointer-events-none"
                         />
 

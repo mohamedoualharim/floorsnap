@@ -160,6 +160,28 @@ const Calculator = () => {
 
           // Clone the visualizer node
           const clone = visualizerRef.current.cloneNode(true);
+
+          // "Bake" the positions of the labels in the clone
+          // This fixes issues where html2canvas misses transforms applied by react-draggable
+          const sourceLabels = visualizerRef.current.querySelectorAll('.group\\/label');
+          const cloneLabels = clone.querySelectorAll('.group\\/label');
+          const sourceRect = visualizerRef.current.getBoundingClientRect();
+
+          sourceLabels.forEach((sourceLabel, index) => {
+            if (cloneLabels[index]) {
+              const labelRect = sourceLabel.getBoundingClientRect();
+              const relativeTop = labelRect.top - sourceRect.top;
+              const relativeLeft = labelRect.left - sourceRect.left;
+
+              // Force exact pixel positioning on the clone
+              cloneLabels[index].style.position = 'absolute';
+              cloneLabels[index].style.top = `${relativeTop}px`;
+              cloneLabels[index].style.left = `${relativeLeft}px`;
+              cloneLabels[index].style.transform = 'none'; // Remove draggable transforms
+              cloneLabels[index].style.margin = '0'; // Remove centering margins if any
+            }
+          });
+
           tempContainer.appendChild(clone);
 
           // Wait a moment for images to settle in the clone

@@ -145,16 +145,31 @@ const Calculator = () => {
       yPos = doc.lastAutoTable.finalY + 15;
 
       // Room Photo with Annotations
+      let imageToAdd = null;
+      let isCaptured = false;
+
       if (visualizerRef.current && roomImage) {
         try {
           const canvas = await html2canvas(visualizerRef.current, {
             useCORS: true,
             scale: 2, // Higher quality
-            logging: false
+            logging: false,
+            allowTaint: true,
+            backgroundColor: null
           });
+          imageToAdd = canvas.toDataURL('image/jpeg', 0.9);
+          isCaptured = true;
+        } catch (e) {
+          console.error("Error capturing visualizer, falling back to raw image", e);
+          imageToAdd = roomImage;
+        }
+      } else {
+        imageToAdd = roomImage;
+      }
 
-          const imgData = canvas.toDataURL('image/jpeg', 0.9);
-          const imgProps = doc.getImageProperties(imgData);
+      if (imageToAdd) {
+        try {
+          const imgProps = doc.getImageProperties(imageToAdd);
           const pdfWidth = 170;
           const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
@@ -162,29 +177,12 @@ const Calculator = () => {
           const finalHeight = Math.min(pdfHeight, 120);
           const finalWidth = (imgProps.width * finalHeight) / imgProps.height;
 
-          doc.text("Room Visualizer", 20, yPos);
+          doc.text(isCaptured ? "Room Visualizer" : "Room Photo", 20, yPos);
           yPos += 5;
-          doc.addImage(imgData, 'JPEG', 20, yPos, finalWidth, finalHeight);
+          doc.addImage(imageToAdd, 'JPEG', 20, yPos, finalWidth, finalHeight);
           yPos += finalHeight + 15;
         } catch (e) {
-          console.error("Error capturing visualizer", e);
-        }
-      } else if (roomImage) {
-        // Fallback to raw image if ref not available
-        try {
-          const imgProps = doc.getImageProperties(roomImage);
-          const pdfWidth = 170;
-          const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-          const finalHeight = Math.min(pdfHeight, 100);
-          const finalWidth = (imgProps.width * finalHeight) / imgProps.height;
-
-          doc.text("Room Photo", 20, yPos);
-          yPos += 5;
-          doc.addImage(roomImage, 'JPEG', 20, yPos, finalWidth, finalHeight);
-          yPos += finalHeight + 15;
-        } catch (e) {
-          console.error("Error adding raw image to PDF", e);
+          console.error("Error adding image to PDF", e);
         }
       }
 

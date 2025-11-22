@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Calculator as CalcIcon, DollarSign, Ruler, Layers, Hammer, FileText, Box, Settings, X } from 'lucide-react';
 import PricingTiers from './PricingTiers';
 import RoomVisualizer from './RoomVisualizer';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 
 const Calculator = () => {
   const [width, setWidth] = useState('');
@@ -23,6 +24,8 @@ const Calculator = () => {
   const [sqft, setSqft] = useState(0);
   const [wasteFactor, setWasteFactor] = useState(0.10);
   const [roomImage, setRoomImage] = useState(null);
+
+  const visualizerRef = useRef(null);
 
   const materialOptions = {
     'Tile': 0.10,
@@ -88,7 +91,7 @@ const Calculator = () => {
     setSqft(w * l);
   }, [width, length]);
 
-  const generatePDF = () => {
+  const generatePDF = async () => {
     try {
       const doc = new jsPDF();
       const mCost = parseFloat(materialCost) || 0;
@@ -118,24 +121,6 @@ const Calculator = () => {
 
       let yPos = 50;
 
-      // Room Photo
-      if (roomImage) {
-        try {
-          const imgProps = doc.getImageProperties(roomImage);
-          const pdfWidth = 170;
-          const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-          // Limit height if too tall
-          const finalHeight = Math.min(pdfHeight, 100);
-          const finalWidth = (imgProps.width * finalHeight) / imgProps.height;
-
-          doc.addImage(roomImage, 'JPEG', 20, yPos, finalWidth, finalHeight);
-          yPos += finalHeight + 10;
-        } catch (e) {
-          console.error("Error adding image to PDF", e);
-        }
-      }
-
       // Breakdown
       doc.setFontSize(14);
       doc.setTextColor(0);
@@ -159,8 +144,59 @@ const Calculator = () => {
 
       yPos = doc.lastAutoTable.finalY + 15;
 
+      // Room Photo with Annotations
+      if (visualizerRef.current && roomImage) {
+        try {
+          const canvas = await html2canvas(visualizerRef.current, {
+            useCORS: true,
+            scale: 2, // Higher quality
+            logging: false
+          });
+
+          const imgData = canvas.toDataURL('image/jpeg', 0.9);
+          const imgProps = doc.getImageProperties(imgData);
+          const pdfWidth = 170;
+          const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+          // Limit height if too tall
+          const finalHeight = Math.min(pdfHeight, 120);
+          const finalWidth = (imgProps.width * finalHeight) / imgProps.height;
+
+          doc.text("Room Visualizer", 20, yPos);
+          yPos += 5;
+          doc.addImage(imgData, 'JPEG', 20, yPos, finalWidth, finalHeight);
+          yPos += finalHeight + 15;
+        } catch (e) {
+          console.error("Error capturing visualizer", e);
+        }
+      } else if (roomImage) {
+        // Fallback to raw image if ref not available
+        try {
+          const imgProps = doc.getImageProperties(roomImage);
+          const pdfWidth = 170;
+          const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+          const finalHeight = Math.min(pdfHeight, 100);
+          const finalWidth = (imgProps.width * finalHeight) / imgProps.height;
+
+          doc.text("Room Photo", 20, yPos);
+          yPos += 5;
+          doc.addImage(roomImage, 'JPEG', 20, yPos, finalWidth, finalHeight);
+          yPos += finalHeight + 15;
+        } catch (e) {
+          console.error("Error adding raw image to PDF", e);
+        }
+      }
+
+      // Check page break before pricing
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+
       // Pricing Options
       doc.setFontSize(14);
+      doc.setTextColor(0);
       doc.text("Quote Options", 20, yPos);
       yPos += 8;
 
@@ -416,6 +452,7 @@ const Calculator = () => {
           sqft={sqft}
           image={roomImage}
           onImageChange={setRoomImage}
+          ref={visualizerRef}
         />
 
         {/* Pricing Tiers */}

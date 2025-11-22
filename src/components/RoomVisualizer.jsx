@@ -38,7 +38,6 @@ const DraggableLabel = ({ label, onDelete, containerRef }) => {
 const RoomVisualizer = React.forwardRef(({ sqft, image, onImageChange }, ref) => {
     const [labels, setLabels] = useState([]);
     const [isAddingLabel, setIsAddingLabel] = useState(false);
-    const [isAddingLabel, setIsAddingLabel] = useState(false);
     const [newLabelText, setNewLabelText] = useState('');
     const [clickPos, setClickPos] = useState(null);
 

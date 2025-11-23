@@ -85,11 +85,19 @@ const Calculator = () => {
     }
   }, [materialType, roomShape]);
 
+  const [isManualInput, setIsManualInput] = useState(false);
+  const [manualSqft, setManualSqft] = useState('');
+
+  // Update SqFt based on inputs and mode
   useEffect(() => {
-    const w = parseFloat(width) || 0;
-    const l = parseFloat(length) || 0;
-    setSqft(w * l);
-  }, [width, length]);
+    if (isManualInput) {
+      setSqft(parseFloat(manualSqft) || 0);
+    } else {
+      const w = parseFloat(width) || 0;
+      const l = parseFloat(length) || 0;
+      setSqft(w * l);
+    }
+  }, [width, length, isManualInput, manualSqft]);
 
   const generatePDF = async () => {
     try {
@@ -327,31 +335,69 @@ const Calculator = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Dimensions Section */}
           <section>
-            <div className="flex items-center gap-2 mb-4 text-slate-500">
-              <Ruler size={18} className="text-orange-500" />
-              <h2 className="text-sm font-bold uppercase tracking-wide text-slate-700">Room Dimensions</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-slate-500">
+                <Ruler size={18} className="text-orange-500" />
+                <h2 className="text-sm font-bold uppercase tracking-wide text-slate-700">Room Dimensions</h2>
+              </div>
+
+              {/* Input Mode Toggle */}
+              <div className="flex bg-slate-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setIsManualInput(false)}
+                  className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${!isManualInput ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Dimensions
+                </button>
+                <button
+                  onClick={() => setIsManualInput(true)}
+                  className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${isManualInput ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Total SqFt
+                </button>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500 transition-all">
-                <label className="block text-xs font-bold text-slate-400 mb-1 uppercase">Width (ft)</label>
+
+            {!isManualInput ? (
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500 transition-all">
+                  <label className="block text-xs font-bold text-slate-400 mb-1 uppercase">Width (ft)</label>
+                  <input
+                    type="number"
+                    value={width}
+                    onChange={(e) => setWidth(e.target.value)}
+                    className="w-full bg-transparent text-2xl font-bold text-slate-800 outline-none placeholder-slate-300"
+                    placeholder="0"
+                  />
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500 transition-all">
+                  <label className="block text-xs font-bold text-slate-400 mb-1 uppercase">Length (ft)</label>
+                  <input
+                    type="number"
+                    value={length}
+                    onChange={(e) => setLength(e.target.value)}
+                    className="w-full bg-transparent text-2xl font-bold text-slate-800 outline-none placeholder-slate-300"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500 transition-all mb-4">
+                <label className="block text-xs font-bold text-slate-400 mb-1 uppercase">Total Area (sq ft)</label>
                 <input
                   type="number"
-                  value={width}
-                  onChange={(e) => setWidth(e.target.value)}
+                  value={manualSqft}
+                  onChange={(e) => setManualSqft(e.target.value)}
                   className="w-full bg-transparent text-2xl font-bold text-slate-800 outline-none placeholder-slate-300"
                   placeholder="0"
                 />
               </div>
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500 transition-all">
-                <label className="block text-xs font-bold text-slate-400 mb-1 uppercase">Length (ft)</label>
-                <input
-                  type="number"
-                  value={length}
-                  onChange={(e) => setLength(e.target.value)}
-                  className="w-full bg-transparent text-2xl font-bold text-slate-800 outline-none placeholder-slate-300"
-                  placeholder="0"
-                />
-              </div>
+            )}
+
+            {/* Helper Text */}
+            <div className="mb-6 flex items-center gap-2 text-slate-400 bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
+              <div className="w-1.5 h-1.5 rounded-full bg-orange-400"></div>
+              <p className="text-xs font-medium">You measure, we calculate waste & price.</p>
             </div>
 
             {/* Room Shape Dropdown */}
